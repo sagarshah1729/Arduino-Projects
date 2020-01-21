@@ -4,3 +4,6 @@
 [submodule "FlightComputer/NeoTee-library"]
 	path = FlightComputer/NeoTee-library
 	url = https://github.com/SlashDevin/NeoTee
+[submodule "Gimbling Mechanism/MPU6050-library"]
+	path = Gimbling Mechanism/MPU6050-library
+	url = https://github.com/jarzebski/Arduino-MPU6050
