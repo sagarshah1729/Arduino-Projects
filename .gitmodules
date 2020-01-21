@@ -1,0 +1,6 @@
+[submodule "FlightComputer/SFE_BMP180_library"]
+	path = FlightComputer/SFE_BMP180_library
+	url = https://github.com/LowPowerLab/SFE_BMP180
+[submodule "FlightComputer/NeoTee-library"]
+	path = FlightComputer/NeoTee-library
+	url = https://github.com/SlashDevin/NeoTee
