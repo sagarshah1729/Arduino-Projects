@@ -8,7 +8,13 @@
 SFE_BMP180 pressure;
 
 double baseline; // baseline pressure
+double groundAltitude; // Stores starting altitude, before launch
+double lastAltitude;
+double apogee; // Stores max altitude for total height
 
+char status;
+double T,P,a,x;
+  
 File myFile;
 Print *outputs[] = { &Serial, &myFile };  // <--  list all the output destinations here
 NeoTee tee( outputs, sizeof(outputs)/sizeof(outputs[0]) );
@@ -22,6 +28,11 @@ void setup()
   startMillis = millis();  //initial start time
   pressure.begin();
   baseline = getPressure();
+  groundAltitude = pressure.altitude(P,baseline);
+
+  pinMode(11, OUTPUT );
+  pinMode(12, INPUT);
+  pinMode(13, OUTPUT);
   
   Serial.print("Initializing SD card...");
 
@@ -62,9 +73,8 @@ void setup()
 
 void loop()
 {
-  char status;
-  double T,P,a;
   myFile = SD.open("test.txt", FILE_WRITE);
+  x= digitalRead(12);
  
   status = pressure.startTemperature();
   if (status != 0)
@@ -95,8 +105,37 @@ void loop()
           tee.print("Altitude: ");
           tee.print(a,2);
           tee.print(" m, ");
+
+          if(a - lastAltitude <= -1) // Checks for a 1 meter drop in altitude
+            {
+             delay(150); // Gravity is 0.102ms per meter, so 150ms is enough to compensate for drag.
+             a = pressure.altitude(P,baseline); // Gets a new altitude reading
+             if(a - lastAltitude <= -2) // Checks if new altitude reading is 1 meter less than last measured
+               {
+                delay(150); // Gravity is 0.102ms per meter, so 150ms is enough to compensate for drag.
+                a = pressure.altitude(P,baseline); // Gets a new altitude reading
+                if(a - lastAltitude <= -3) // Checks if new altitude reading is 2 meters less than last measured
+                  {
+                     apogee = lastAltitude;
+                     apogee = apogee - 3;
+                     if (x == HIGH) {
+                     // read the incoming byte:
+                     digitalWrite(11, HIGH);
+                     digitalWrite(13, HIGH);
+                     } else if (x == LOW)
+                     {
+                     digitalWrite(11, LOW);
+                     digitalWrite(13, LOW);
+                     }
+                  }
+                  else lastAltitude = a; // False reading. Sets current altitude to the last measured altitude
+               }
+               else lastAltitude = a; // False reading. Sets current altitude to the last measured altitude     
+            }
+            else lastAltitude = a; // False reading. Sets current altitude to the last measured altitude
+                      
         }
-        else tee.println("Error retrieving pressure measurement\n");
+       else tee.println("Error retrieving pressure measurement\n");
       }
       else tee.println("Error starting pressure measurement\n");
     }
@@ -111,6 +150,6 @@ void loop()
   tee.print(durSS,2);
   tee.println(" s");
       
-  delay(5000);  // Pause for 5 seconds.
+  //delay(5000);  // Pause for 5 seconds.
   myFile.close();
 }
