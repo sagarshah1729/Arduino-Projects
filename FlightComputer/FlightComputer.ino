@@ -7,7 +7,7 @@
 
 SFE_BMP180 pressure;
 
-#define ALTITUDE 13.0 // Altitude of Star Labs in Surat, Gujarat in meters
+double baseline; // baseline pressure
 
 File myFile;
 Print *outputs[] = { &Serial, &myFile };  // <--  list all the output destinations here
@@ -21,7 +21,8 @@ void setup()
   Serial.begin(9600);
   startMillis = millis();  //initial start time
   pressure.begin();
-
+  baseline = getPressure();
+  
   Serial.print("Initializing SD card...");
 
   if (!SD.begin(4)) {
@@ -62,7 +63,7 @@ void setup()
 void loop()
 {
   char status;
-  double T,P,p0,a;
+  double T,P,a;
   myFile = SD.open("test.txt", FILE_WRITE);
  
   status = pressure.startTemperature();
@@ -88,8 +89,9 @@ void loop()
           tee.print(P*0.0295333727,2);
           tee.print(" Hg, ");
 
-          p0 = pressure.sealevel(P,ALTITUDE);          
-          a = pressure.altitude(P,p0);
+          // Show the relative altitude difference between
+          // the new reading and the baseline reading:
+          a = pressure.altitude(P,baseline);
           tee.print("Altitude: ");
           tee.print(a,2);
           tee.print(" m, ");
